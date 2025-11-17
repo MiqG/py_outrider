@@ -51,7 +51,7 @@ def write_results_table(adata, filename, all=True, alpha=0.05):
 def read_data(input_file, sample_anno_file=None, dtype='float64'):
     assert input_file is not None, 'input_file path specified is None'
 
-    ext = os.path.splitext(input_file)[-1].lower()
+    ext = os.path.splitext(input_file.replace(".gz",""))[-1].lower()
     assert ext in ['.csv', '.h5ad'], (
         'input_file has to be either a csv or h5ad file')
 
