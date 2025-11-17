@@ -177,7 +177,6 @@ def rev_trans_tf(x_pred, sf, trans_func):
 
     return x_pred
 
-
 def prepare_covariates(adata, covariates=None):
     if covariates is not None:
         assert isinstance(adata, anndata.AnnData), (
@@ -190,40 +189,34 @@ def prepare_covariates(adata, covariates=None):
 
         cov_sample = adata.obs[covariates].copy()
 
-        # transform each cov column to the respective 0|1 code
+        # convert categorical covariates into dummy-coded numeric variables
+        
         for c in cov_sample:
-            col = cov_sample[c].astype("category")
-            if len(col.cat.categories) == 1:
-                cov_sample.drop(c, axis=1, inplace=True, errors="ignore")
-            elif len(col.cat.categories) == 2:
-                only_01 = [(True
-                            if x in [0, 1]
-                            else False
-                            for x in col.cat.categories)]
-                if all(only_01) is True:
-                    # print(f"only_01: {c}")
-                    pass
-                else:
-                    # print(f"2 cat: {c}")
-                    oneh = pd.get_dummies(cov_sample[c])
-                    cov_sample[c] = oneh.iloc[:, 0]
-            else:
-                # print(f">2 cat: {c}")
-                oneh = pd.get_dummies(cov_sample[c])
-                oneh.columns = [c + "_" + str(x) for x in oneh.columns]
-                cov_sample.drop(c, axis=1, inplace=True, errors="ignore")
-                cov_sample = pd.concat([cov_sample, oneh], axis=1)
+            if cov_sample[c].dtype == 'object' or str(cov_sample[c].dtype).startswith('category'):
+                # handle both binary and multi-class categories uniformly
+                dummies = pd.get_dummies(cov_sample[c], drop_first=True, prefix=c)
+                cov_sample.drop(columns=[c], inplace=True)
+                cov_sample = pd.concat([cov_sample, dummies], axis=1)
+
+        # ensure all values are numeric
+        
+        cov_sample = cov_sample.apply(pd.to_numeric, errors='coerce').fillna(0)
 
         print_func.print_time("Including given covariates as:")
         print(cov_sample.head())
-        adata.uns["covariates_oneh"] = np.array(cov_sample.values,
-                                                dtype=adata.X.dtype)
-        adata.uns["X_AE_input"] = np.concatenate([adata.X, cov_sample.values],
-                                                 axis=1)
+
+        # store in adata
+        
+        adata.uns["covariates_oneh"] = cov_sample.to_numpy(dtype=adata.X.dtype)
+        adata.uns["X_AE_input"] = np.concatenate(
+            [adata.X, adata.uns["covariates_oneh"]],
+            axis=1
+        )
     else:
         adata.uns["X_AE_input"] = adata.X
 
     return adata
+
 
 
 def add_noise(adata, noise_factor):
