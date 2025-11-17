@@ -79,8 +79,8 @@ def read_data(input_file, sample_anno_file=None, dtype='float64'):
 def read_sample_anno(sample_anno_file, adata):
     assert sample_anno_file is not None, 'sample_anno_file specified is None'
 
-    sample_anno = pd.read_csv(sample_anno_file, sep=",", header=0,
-                              index_col=0).fillna(np.nan)
+    sample_anno = pd.read_csv(sample_anno_file, sep=",", header=0).fillna(np.nan)
+    
     adata.obs = sort_sample_anno(sample_anno, adata)
 
     return adata
