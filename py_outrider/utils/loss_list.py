@@ -30,8 +30,9 @@ class Loss_list():
                                 columns=['step', 'step_name', 'loss', 'time',
                                          'time_from_start',
                                          'time_from_start_sec'])
-        self.loss_summary = self.loss_summary.append(loss_row,
-                                                     ignore_index=True)
+        self.loss_summary = pd.concat(
+            [self.loss_summary, loss_row], ignore_index=True
+        )
 
         if print_text != "":
             FORCE_TEXT_LENGTH = 28
