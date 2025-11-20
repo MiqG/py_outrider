@@ -7,7 +7,6 @@ from .utils.io import (read_data, create_adata_from_arrays, write_output,
 from .optimal_rank_estimation import compute_zscore, estimate_optimal_dim
 from .preprocess import preprocess
 
-
 def full_run(args_input):
     print_func.print_time('parser check for correct input arguments')
     args = parser.Check_parser(args_input).args_mod
@@ -39,10 +38,18 @@ def full_run(args_input):
             Z = compute_zscore(prep)
             best_encod_dim, s, cutoff = estimate_optimal_dim(Z)
 
-            outrider_args["encod_dim"] = best_encod_dim
-
             print_func.print_time(f'Optimal OHT encod_dim {best_encod_dim}')
-            
+
+            if best_encod_dim < 2:
+                print_func.print_time(
+                    "Optimal latent space dimension is smaller than 2. Check your count matrix and "
+                    "verify that all samples have the expected number of counts. "
+                    "For now, the latent space dimension is set to 2."
+                )
+                best_encod_dim = 2
+
+            outrider_args["encod_dim"] = best_encod_dim
+        
         except:
 
             print_func.print_time('encod_dim is None & OHT did not work -> '

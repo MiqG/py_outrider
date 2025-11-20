@@ -38,6 +38,26 @@ def optimal_svht_coef(beta):
     return np.sqrt(2*(beta + 1) + 8*beta/((beta+1) + np.sqrt(beta**2 + 14*beta + 1)))
 
 
+def impute_column_mean(Z):
+    """Impute missing (NaN/inf) values using column means."""
+    Z = np.asarray(Z, dtype=float)
+    Z_clean = Z.copy()
+
+    # Replace infinities with NaN
+    Z_clean[~np.isfinite(Z_clean)] = np.nan
+
+    col_means = np.nanmean(Z_clean, axis=0)
+
+    # Handle columns that are entirely NaN
+    col_means = np.where(np.isnan(col_means), 0.0, col_means)
+
+    # Broadcast replace
+    inds = np.where(np.isnan(Z_clean))
+    Z_clean[inds] = np.take(col_means, inds[1])
+
+    return Z_clean
+
+
 def estimate_optimal_dim(Z):
     """
     Estimate the optimal number of latent dimensions
@@ -46,6 +66,10 @@ def estimate_optimal_dim(Z):
     Z: matrix (e.g., z-score matrix), shape (n_samples, n_genes)
     """
     Z = np.asarray(Z)
+    
+    if not np.all(np.isfinite(Z)):
+        Z = impute_column_mean(Z)
+    
     n, p = Z.shape
 
     if p/n > 1:
@@ -74,8 +98,8 @@ def compute_zscore(adata):
     
     X = adata.X
     
-    row_means = X.mean(axis=1, keepdims=True)
-    row_sds = X.std(axis=1, keepdims=True)
+    row_means = np.nanmean(X, axis=1, keepdims=True)
+    row_sds   = np.nanstd(X, axis=1, keepdims=True)
 
     Z = (X - row_means) / row_sds
     
