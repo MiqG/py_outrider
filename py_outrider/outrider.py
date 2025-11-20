@@ -237,9 +237,11 @@ def calc_adjusted_pvalues(adata, method='fdr_by'):
     assert "X_pvalue" in adata.layers.keys(), (
         'No X_pvalue found in AnnData object, calculate pvalues first.')
 
-    adata.layers["X_padj"] = (np.array([multiple_testing_nan(row,
-                                                             method=method)
-                                        for row in adata.layers["X_pvalue"]]))
+    adata.layers["X_padj"] = (
+        np.array([
+            multiple_testing_nan(row, method=method) for row in adata.layers["X_pvalue"]
+        ])
+    )
     return adata
 
 
@@ -254,12 +256,14 @@ def multiple_testing_nan(X_pvalue, method='fdr_by'):
         statsmodels.stats.multitest.multipletests).
     :return: array of corrected p-values with nan values.
     """
+    pval_corrected = np.full_like(X_pvalue, np.nan, dtype=float)
+        
     mask = np.isfinite(X_pvalue)
-    pval_corrected = np.empty(X_pvalue.shape)
-    pval_corrected.fill(np.nan)
-    pval_corrected[mask] = multipletests(X_pvalue[mask], method=method,
-                                         is_sorted=False,
-                                         returnsorted=False)[1]
+    if np.any(mask):
+        pval_corrected[mask] = multipletests(
+            X_pvalue[mask], method=method, is_sorted=False, returnsorted=False
+        )[1]
+        
     return list(pval_corrected)
 
 
