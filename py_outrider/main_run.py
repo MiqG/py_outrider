@@ -26,7 +26,7 @@ def full_run(args_input):
         
         try:
             
-            prep = preprocess(
+            adata = preprocess(
                 adata,
                 prepro_func=outrider_args["prepro_func"],
                 sf_norm=outrider_args["sf_norm"],
@@ -35,7 +35,7 @@ def full_run(args_input):
                 noise_factor=outrider_args["noise_factor"],
                 covariates=outrider_args["covariates"]
             )
-            Z = compute_zscore(prep)
+            Z = compute_zscore(adata)
             best_encod_dim, s, cutoff = estimate_optimal_dim(Z)
 
             print_func.print_time(f'Optimal OHT encod_dim {best_encod_dim}')
@@ -50,20 +50,20 @@ def full_run(args_input):
 
             outrider_args["encod_dim"] = best_encod_dim
         
-        except:
+    except:
 
-            print_func.print_time('encod_dim is None & OHT did not work -> '
-                                  'running hyperparameter search')
+        print_func.print_time('encod_dim is None & OHT did not work -> '
+                              'running hyperparameter search')
 
-            hyper_args = outrider_args.copy()
-            # set iterations during hyper param opt
-            hyper_args["iterations"] = args["max_iter_hyper"]
-            # set convergence limit during hyper param opt
-            hyper_args["convergence"] = args["convergence_hyper"]
-            hyper = Hyperpar_opt(adata, **hyper_args)
-            adata.uns["hyperpar_table"] = hyper.hyperpar_table
-            outrider_args["encod_dim"] = hyper.best_encod_dim
-            outrider_args["noise_factor"] = hyper.best_noise_factor
+        hyper_args = outrider_args.copy()
+        # set iterations during hyper param opt
+        hyper_args["iterations"] = args["max_iter_hyper"]
+        # set convergence limit during hyper param opt
+        hyper_args["convergence"] = args["convergence_hyper"]
+        hyper = Hyperpar_opt(adata, **hyper_args)
+        adata.uns["hyperpar_table"] = hyper.hyperpar_table
+        outrider_args["encod_dim"] = hyper.best_encod_dim
+        outrider_args["noise_factor"] = hyper.best_noise_factor
 
     # run outrider model
     adata = outrider(adata, do_call_outliers=True, **outrider_args)

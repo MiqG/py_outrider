@@ -94,9 +94,15 @@ def estimate_optimal_dim(Z):
     return rank, s, cutoff
 
 
-def compute_zscore(adata):
+def compute_zscore(adata, layers=["X_transformed","X_prepro","X_sf_norm","X_raw"]):
     
-    X = adata.X
+    for layer in layers:
+        try:
+            X = adata.layers[layer]
+            print(f"Computing OHT Z-scores from layer {layer}")
+            break
+        except:
+            continue
     
     row_means = np.nanmean(X, axis=1, keepdims=True)
     row_sds   = np.nanstd(X, axis=1, keepdims=True)
